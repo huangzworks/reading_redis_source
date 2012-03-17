@@ -72,7 +72,7 @@ typedef struct dictType {
 typedef struct dictht {
     dictEntry **table;      // 节点指针数组
     unsigned long size;     // 桶的数量
-    unsigned long sizemask; // mask 码，用于地址 index 计算
+    unsigned long sizemask; // mask 码，用于地址索引计算
     unsigned long used;     // 已有节点数量
 } dictht;
 
@@ -81,7 +81,7 @@ typedef struct dict {
     dictType *type;     // 为哈希表中不同类型的值所使用的一族函数
     void *privdata;
     dictht ht[2];       // 每个字典使用两个哈希表
-    int rehashidx;      // 指示 rehash 是否正在进行，如果不是则为 -1
+    int rehashidx;      // rehash 进行到的索引位置，如果没有在 rehash ，就为 -1
     int iterators;      // 当前正在使用的 iterator 的数量
 } dict;
 
