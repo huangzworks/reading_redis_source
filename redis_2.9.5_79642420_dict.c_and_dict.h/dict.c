@@ -741,9 +741,11 @@ static int _dictExpandIfNeeded(dict *d)
      * table (global setting) or we should avoid it but the ratio between
      * elements/buckets is over the "safe" threshold, we resize doubling
      * the number of buckets. */
-    // expand 有两种
-    // 1) used >= size 且 dict_can_resize 为真，正常 expand
-    // 2) dict_can_resize 不为真，但 used/size 大于指定比率，强制 expand
+    // 当 0 号哈希表的已用节点数大于等于它的桶数量，
+    // 且以下两个条件的其中之一被满足时，执行 expand 操作：
+    // 1) dict_can_resize 变量为真，正常 expand
+    // 2) 已用节点数除以桶数量的比率超过变量 dict_force_resize_ratio ，强制 expand
+    // (目前版本中 dict_force_resize_ratio = 5)
     if (d->ht[0].used >= d->ht[0].size &&
         (dict_can_resize ||
          d->ht[0].used/d->ht[0].size > dict_force_resize_ratio))
