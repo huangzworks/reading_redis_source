@@ -9,12 +9,12 @@ Redis 源码阅读
 
 比如：
 
-redis_2.9.5_79642420_dict.c_and_dict.h
+dict.c_and_dict.h_redis_2.9.5_79642420
 
 就是说：
 
+| 文件 dict.c 、 dict.h
 | 版本 redis 2.9.5
 | 哈希 79642420
-| 文件 dict.c 、 dict.h
 
 就是这样。
