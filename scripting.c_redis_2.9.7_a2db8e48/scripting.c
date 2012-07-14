@@ -550,8 +550,8 @@ void scriptingInit(void) {
     lua_settable(lua, -3);
 
     /* Finally set the table as 'redis' global var. */
-    // 将这个表设置为 redis
-    // 这样以上注册过的命令就可以在 Lua 中通过 lua.commandName 来调用了
+    // 将这个 redis 表设置为全局变量
+    // 这样以上注册过的命令就可以在 Lua 中通过 lua.xxx 的方式来调用了
     lua_setglobal(lua,"redis");
 
     /* Replace math.random and math.randomseed with our implementations. */
@@ -595,6 +595,7 @@ void scriptingInit(void) {
     /* Lua beginners ofter don't use "local", this is likely to introduce
      * subtle bugs in their code. To prevent problems we protect accesses
      * to global variables. */
+    // 对全局变量进行保护，避免遭到有意或无意的覆盖
     scriptingEnableGlobalsProtection(lua);
 
     // 将 Lua 环境设置给 Redis server 
@@ -777,7 +778,7 @@ int luaCreateFunction(redisClient *c, lua_State *lua, char *funcname, robj *body
     return REDIS_OK;
 }
 
-// EVAL 命令实现
+// 对脚本求值的实际实现
 void evalGenericCommand(redisClient *c, int evalsha) {
     lua_State *lua = server.lua;
     char funcname[43];
@@ -820,7 +821,7 @@ void evalGenericCommand(redisClient *c, int evalsha) {
     if (!evalsha) {
         /* Hash the code if this is an EVAL call */
         sha1hex(funcname+2,c->argv[1]->ptr,sdslen(c->argv[1]->ptr));
-    // 输入被调用的命令是 EVALSHA ，那么直接使用参数中的 SHA1 值
+    // 如果被调用的命令是 EVALSHA ，那么直接使用参数中的 SHA1 值
     } else {
         /* We already have the SHA if it is a EVALSHA */
         int j;
@@ -832,7 +833,7 @@ void evalGenericCommand(redisClient *c, int evalsha) {
     }
 
     /* Try to lookup the Lua function */
-    // 根据函数名，查找函数
+    // 根据函数名，在 Lua 环境中查找函数
     lua_getglobal(lua, funcname);
     // 如果函数没找到。。。
     if (lua_isnil(lua,1)) {
@@ -856,6 +857,7 @@ void evalGenericCommand(redisClient *c, int evalsha) {
 
     /* Populate the argv and keys table accordingly to the arguments that
      * EVAL received. */
+    // 将脚本的输入参数保存到 Lua 里的 KEYS 和 ARGV 全局变量，方便使用
     luaSetGlobalArray(lua,"KEYS",c->argv+3,numkeys);
     luaSetGlobalArray(lua,"ARGV",c->argv+3+numkeys,c->argc-3-numkeys);
 
@@ -866,6 +868,7 @@ void evalGenericCommand(redisClient *c, int evalsha) {
      * is running for too much time.
      * We set the hook only if the time limit is enabled as the hook will
      * make the Lua script execution slower. */
+    // 实现超时检测和处理
     server.lua_caller = c;
     server.lua_time_start = ustime()/1000;
     server.lua_kill = 0;
@@ -926,6 +929,8 @@ void evalGenericCommand(redisClient *c, int evalsha) {
     }
 }
 
+// 通过传给 evalGenericCommand 函数不同的 evalsha 参数（ 0 或 1 ）
+// 来决定使用 EVAL 还是 EVALSHA
 void evalCommand(redisClient *c) {
     evalGenericCommand(c,0);
 }
@@ -985,14 +990,19 @@ int redis_math_randomseed (lua_State *L) {
  * SCRIPT command for script environment introspection and control
  * ------------------------------------------------------------------------- */
 
+// SCRIPT 命令实现
+// 支持 LOAD 、 FLUSH 、 FLUSH 和 KILL 四种参数
 void scriptCommand(redisClient *c) {
     if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"flush")) {
+        // 重置脚本环境
         scriptingReset();
         addReply(c,shared.ok);
         server.dirty++; /* Replicating this command is a good idea. */
     } else if (c->argc >= 2 && !strcasecmp(c->argv[1]->ptr,"exists")) {
         int j;
 
+        // 遍历 server.lua_scripts 属性
+        // 检查给定的一个或多个脚本是否存在
         addReplyMultiBulkLen(c, c->argc-2);
         for (j = 2; j < c->argc; j++) {
             if (dictFind(server.lua_scripts,c->argv[j]->ptr))
@@ -1004,6 +1014,7 @@ void scriptCommand(redisClient *c) {
         char funcname[43];
         sds sha;
 
+        // 根据给定脚本，生成 Lua 函数，并将它载入到 server.lua_scripts 当中
         funcname[0] = 'f';
         funcname[1] = '_';
         sha1hex(funcname+2,c->argv[2]->ptr,sdslen(c->argv[2]->ptr));
@@ -1018,6 +1029,8 @@ void scriptCommand(redisClient *c) {
         addReplyBulkCBuffer(c,funcname+2,40);
         sdsfree(sha);
     } else if (c->argc == 2 && !strcasecmp(c->argv[1]->ptr,"kill")) {
+        // 终止指定脚本的运行
+        // 关于终止方式的细节，可以看 evalGenericCommand 函数是如何处理的
         if (server.lua_caller == NULL) {
             addReplyError(c,"No scripts in execution right now.");
         } else if (server.lua_write_dirty) {
