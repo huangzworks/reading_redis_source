@@ -5,7 +5,7 @@
  * typedef struct redisClient {
  *   // 其他属性 ...
  *   redisDb *db;                // 当前 DB
- *   int flags;                  // 标记事务是否进行中，以及 WATCH 的状态
+ *   int flags;                  // 标记事务状态，以及 WATCH 状态
  *   multiState mstate;          // 事务中的所有命令
  *   list *watched_keys;         // 这个客户端 WATCH 的所有 KEY
  *   // 其他属性 ...
