@@ -12,7 +12,7 @@
  * } redisClient;
  *
  * typedef struct multiState {
- *   multiCmd *commands;         // 保存事务中所有命令的数组（FIFO 形式）
+ *   multiCmd *commands;         // 保存事务中所有命令的数组
  *   int count;                  // 命令的数量
  * } multiState;
  *
@@ -59,14 +59,14 @@ void queueMultiCommand(redisClient *c) {
     multiCmd *mc;
     int j;
 
-    // 为新命令分配空间
+    // 为新命令分配储存结构，并放到数组的末尾
     c->mstate.commands = zrealloc(c->mstate.commands,
             sizeof(multiCmd)*(c->mstate.count+1));
 
     // 设置新命令
-    mc = c->mstate.commands+c->mstate.count;            // 指向新命令
+    mc = c->mstate.commands+c->mstate.count;            // 指向储存新命令的结构体
     mc->cmd = c->cmd;                                   // 设置命令
-    mc->argc = c->argc;                                 // 设置参数计数器
+    mc->argc = c->argc;                                 // 设置参数数量
     mc->argv = zmalloc(sizeof(robj*)*c->argc);          // 生成参数空间
     memcpy(mc->argv,c->argv,sizeof(robj*)*c->argc);     // 设置参数
     for (j = 0; j < c->argc; j++)
