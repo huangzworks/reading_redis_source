@@ -5,14 +5,13 @@
  * typedef struct redisClient {
  *   // 其他属性 ...
  *   redisDb *db;                // 当前 DB
- *   int flags;                  // 标记事务状态，以及 WATCH 状态
  *   multiState mstate;          // 事务中的所有命令
  *   list *watched_keys;         // 这个客户端 WATCH 的所有 KEY
  *   // 其他属性 ...
  * } redisClient;
  *
  * typedef struct multiState {
- *   multiCmd *commands;         // 保存事务中所有命令的数组
+ *   multiCmd *commands;         // 保存事务中所有命令的数组（FIFO 形式）
  *   int count;                  // 命令的数量
  * } multiState;
  *
@@ -21,6 +20,12 @@
  *   int argc;                   // 命令参数数量
  *   struct redisCommand *cmd;   // 命令
  * } multiCmd;
+ *
+ * typedef struct redisDb {
+ *    // 其他属性 ...
+ *    dict *watched_keys;
+ *    int id;
+ * } redisDb;
  *
  */
 
@@ -59,14 +64,14 @@ void queueMultiCommand(redisClient *c) {
     multiCmd *mc;
     int j;
 
-    // 为新命令分配储存结构，并放到数组的末尾
+    // 为新命令分配空间
     c->mstate.commands = zrealloc(c->mstate.commands,
             sizeof(multiCmd)*(c->mstate.count+1));
 
     // 设置新命令
-    mc = c->mstate.commands+c->mstate.count;            // 指向储存新命令的结构体
+    mc = c->mstate.commands+c->mstate.count;            // 指向新命令
     mc->cmd = c->cmd;                                   // 设置命令
-    mc->argc = c->argc;                                 // 设置参数数量
+    mc->argc = c->argc;                                 // 设置参数计数器
     mc->argv = zmalloc(sizeof(robj*)*c->argc);          // 生成参数空间
     memcpy(mc->argv,c->argv,sizeof(robj*)*c->argc);     // 设置参数
     for (j = 0; j < c->argc; j++)
@@ -213,7 +218,8 @@ void execCommand(redisClient *c) {
 // 这样每当某个 KEY 被修改了，那么所有 WATCH 它的客户端都会被标记为 dirty
 //
 // 另外每个客户端也保存一个被 WATCH KEY 的链表，
-// 这样就可以在事务执行完毕或者执行 UNWATCH 命令的时候一次性对所有 KEY 进行 UNWATCH
+// 这样就可以在事务执行完毕或者执行 UNWATCH 命令的时候
+// 一次性对客户端 WATCHED 的所有 KEY 进行 UNWATCH
 
 /* In the client->watched_keys list we need to use watchedKey structures
  * as in order to identify a key in Redis we need both the key name and the
@@ -307,7 +313,7 @@ void unwatchAllKeys(redisClient *c) {
 
 /* "Touch" a key, so that if this key is being WATCHed by some client the
  * next EXEC will fail. */
-// 将当前客户端中的所有 KEY 的 REDIS_DIRTY_CAS 状态打开
+// 打开所有 WATCH 给定 KEY 的客户端的 REDIS_DIRTY_CAS 状态
 // 使得接下来的 EXEC 执行失败
 void touchWatchedKey(redisDb *db, robj *key) {
     list *clients;
