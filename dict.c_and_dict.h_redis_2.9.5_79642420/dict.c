@@ -128,7 +128,7 @@ unsigned int dictGenCaseHashFunction(const unsigned char *buf, int len) {
 /* 重置哈希表 */
 static void _dictReset(dictht *ht)
 {
-    ht->table = NULL;
+    ht->table = NULL;   // 未分配空间
     ht->size = 0;
     ht->sizemask = 0;
     ht->used = 0;
