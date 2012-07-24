@@ -40,9 +40,13 @@
 typedef char *sds;  // 字符串类型的别名
 
 struct sdshdr {     // 持有 sds 的结构
-    int len;        // 内容的长度
-    int free;       // 可使用的空余长度
-    char buf[];     // 字符串（包含字符串内容）
+    // buf 中字符串的长度
+    int len;        
+    // buf 中可使用的空余长度
+    int free;       
+    // buf 中可以包含字符串，
+    // 以及未使用的空间
+    char buf[];
 };
 
 // 返回字符串内容的实际长度
