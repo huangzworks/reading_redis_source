@@ -52,7 +52,7 @@ sds sdsnewlen(const void *init, size_t initlen) {
     if (sh == NULL) return NULL;
 
     sh->len = initlen;
-    sh->free = 0;
+    sh->free = 0;   // 刚开始时 free 为 0
 
     // 设置字符串值
     if (initlen && init)
@@ -89,7 +89,9 @@ void sdsfree(sds s) {
 // 并更新 free 属性和 len 属性
 void sdsupdatelen(sds s) {
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
+
     int reallen = strlen(s);
+
     sh->free += (sh->len-reallen);
     sh->len = reallen;
 }
@@ -98,6 +100,7 @@ void sdsupdatelen(sds s) {
 // 并将 sds 的长度归零
 void sdsclear(sds s) {
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
+
     sh->free += sh->len;
     sh->len = 0;
     sh->buf[0] = '\0';  // 设为空字符串
@@ -123,6 +126,7 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
     sh = (void*) (s-(sizeof(struct sdshdr)));
 
     // 设置新 sds 的字符串长度
+    // 这个长度比用户设置的要大（大多数时候是 newlen 的 2 倍）
     newlen = (len+addlen);
     if (newlen < SDS_MAX_PREALLOC)
         newlen *= 2;
@@ -150,6 +154,7 @@ sds sdsRemoveFreeSpace(sds s) {
     sh = (void*) (s-(sizeof(struct sdshdr)));
     sh = zrealloc(sh, sizeof(struct sdshdr)+sh->len+1);
     sh->free = 0;
+
     return sh->buf;
 }
 
@@ -184,18 +189,19 @@ size_t sdsAllocSize(sds s) {
 // 根据 incr 参数，增大 sds 的长度，并缩减空余（free）空间的长度
 // 并将 NULL 放到新字符串的结尾
 //
-// 这个函数通常用于执行 sdsMakeRoomFor() 之后，然后对字符串进行了写入
 // 这个函数通常用于执行 sdsMakeRoomFor() ，并且对字符串进行了写入之后，
 // 对字符串现有的实际长度进行设置
 //
 // 注意：将 incr 参数设为负数可以对字符串进行向右截断
 // 
 // 以下是一个sdsMakeRoomFor 和 sdsIncrLen 的常见组合使用方法：
+//
 // oldlen = sdslen(s);
 // s = sdsMakeRoomFor(s, BUFFER_SIZE);
 // nread = read(fd, s+oldlen, BUFFER_SIZE);
 // ... check for nread <= 0 and handle it ...
 // sdsIncrLen(s, nhread);
+//
 void sdsIncrLen(sds s, int incr) {
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
 
@@ -248,6 +254,7 @@ sds sdscatlen(sds s, const void *t, size_t len) {
     if (s == NULL) return NULL;
 
     sh = (void*) (s-(sizeof(struct sdshdr)));
+
     // 在 sds 原来的尾部追加值 t
     memcpy(s+curlen, t, len);
     sh->len = curlen+len;

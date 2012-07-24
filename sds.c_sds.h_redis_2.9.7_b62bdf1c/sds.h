@@ -31,6 +31,7 @@
 #ifndef __SDS_H
 #define __SDS_H
 
+// 设置分配内存的指标
 #define SDS_MAX_PREALLOC (1024*1024)
 
 #include <sys/types.h>
@@ -39,7 +40,7 @@
 typedef char *sds;  // 字符串类型的别名
 
 struct sdshdr {     // 持有 sds 的结构
-    int len;        // 内容的长度（不一定正确，根据 sdslen 函数结果为准）
+    int len;        // 内容的长度
     int free;       // 可使用的空余长度
     char buf[];     // 字符串（包含字符串内容）
 };
