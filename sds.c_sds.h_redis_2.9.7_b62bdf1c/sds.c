@@ -112,21 +112,22 @@ void sdsclear(sds s) {
  * 
  * Note: this does not change the *size* of the sds string as returned
  * by sdslen(), but only the free buffer space we have. */
-// 扩展 sds 字符串的空余空间， 确保在调用这个函数之后，
-// sds 中的字符串长度可以增大 addlen + 1 bytes（for NULL）
+// 扩展 sds 的预留空间， 确保在调用这个函数之后，
+// sds 字符串后的 addlen + 1 bytes（for NULL） 可写
 sds sdsMakeRoomFor(sds s, size_t addlen) {
     struct sdshdr *sh, *newsh;
     size_t free = sdsavail(s);
     size_t len, newlen;
 
-    // sds 已经足够大，不必扩展
+    // 预留空间可以满足本次拼接
     if (free >= addlen) return s;
 
     len = sdslen(s);
     sh = (void*) (s-(sizeof(struct sdshdr)));
 
     // 设置新 sds 的字符串长度
-    // 这个长度比用户设置的要大（大多数时候是 newlen 的 2 倍）
+    // 这个长度比完成本次拼接实际所需的长度要大
+    // 通过预留空间优化下次拼接操作
     newlen = (len+addlen);
     if (newlen < SDS_MAX_PREALLOC)
         newlen *= 2;
@@ -146,7 +147,7 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
 /* Reallocate the sds string so that it has no free space at the end. The
  * contained string remains not altered, but next concatenation operations
  * will require a reallocation. */
-// 对 sds 进行紧缩，将字符串之后的空余空间全部释放
+// 对 sds 进行紧缩，将字符串之后的预留空间全部释放
 // 在执行此操作之后，下一次对这个 sds 进行拼接操作必然会导致重分配
 sds sdsRemoveFreeSpace(sds s) {
     struct sdshdr *sh;
@@ -158,7 +159,7 @@ sds sdsRemoveFreeSpace(sds s) {
     return sh->buf;
 }
 
-// 返回 sds 字符串已占用的空间（包括已用和空闲的，以及 sdshdr 结构的）
+// 返回 sds 字符串已占用的空间（包括已用和预留的，以及 sdshdr 结构的）
 size_t sdsAllocSize(sds s) {
     struct sdshdr *sh = (void*) (s-(sizeof(struct sdshdr)));
 
@@ -186,7 +187,7 @@ size_t sdsAllocSize(sds s) {
  * ... check for nread <= 0 and handle it ...
  * sdsIncrLen(s, nhread);
  */
-// 根据 incr 参数，增大 sds 的长度，并缩减空余（free）空间的长度
+// 根据 incr 参数，增大 sds 的长度，并缩减预留（free）空间的长度
 // 并将 NULL 放到新字符串的结尾
 //
 // 这个函数通常用于执行 sdsMakeRoomFor() ，并且对字符串进行了写入之后，
@@ -208,11 +209,11 @@ void sdsIncrLen(sds s, int incr) {
     // 确保有足够空间进行操作
     assert(sh->free >= incr);
 
-    // 更新长度和空余空间长度
+    // 更新长度和预留空间长度
     sh->len += incr;
     sh->free -= incr;
 
-    // 确保更新长度之后空余长度正确
+    // 确保更新长度之后预留长度正确
     assert(sh->free >= 0);
 
     // 设置新 NULL

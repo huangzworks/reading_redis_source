@@ -39,13 +39,13 @@
 
 typedef char *sds;  // 字符串类型的别名
 
-struct sdshdr {     // 持有 sds 的结构
-    // buf 中字符串的长度
+// 持有 sds 的结构
+struct sdshdr {     
+    // buf 中已被使用的字符串空间数量
     int len;        
-    // buf 中可使用的空余长度
+    // buf 中预留字符串空间数量
     int free;       
-    // buf 中可以包含字符串，
-    // 以及未使用的空间
+    // 实际储存字符串的地方
     char buf[];
 };
 
@@ -55,7 +55,7 @@ static inline size_t sdslen(const sds s) {
     return sh->len;
 }
 
-// 返回字符串的空余长度
+// 返回字符串的预留长度
 static inline size_t sdsavail(const sds s) {
     struct sdshdr *sh = (void*)(s-(sizeof(struct sdshdr)));
     return sh->free;
