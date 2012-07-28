@@ -44,7 +44,7 @@
 
 /* Include the best multiplexing layer supported by this system.
  * The following should be ordered by performances, descending. */
-// 选择尽可能快的库
+// 选择最适合的多路复用库
 #ifdef HAVE_EVPORT
 #include "ae_evport.c"
 #else
@@ -59,7 +59,7 @@
     #endif
 #endif
 
-// 创建一个新的事件处理器
+// 创建一个新的事件状态
 aeEventLoop *aeCreateEventLoop(int setsize) {
     aeEventLoop *eventLoop;
     int i;
@@ -94,7 +94,7 @@ err:
     return NULL;
 }
 
-// 删除事件处理器
+// 删除事件状态
 void aeDeleteEventLoop(aeEventLoop *eventLoop) {
     aeApiFree(eventLoop);
     zfree(eventLoop->events);
@@ -102,7 +102,7 @@ void aeDeleteEventLoop(aeEventLoop *eventLoop) {
     zfree(eventLoop);
 }
 
-// 停止事件处理器
+// 停止事件处理
 void aeStop(aeEventLoop *eventLoop) {
     eventLoop->stop = 1;
 }
@@ -389,7 +389,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
      * to fire. */
     // 如果文件事件的个数不为空
     // 或者 AE_TIME_EVENTS 被打开，且没有打开 AE_DONT_WAIT
-    // 那么执行以下语句。。。
+    // 那么执行以下语句，设置处理文件事件时所使用的时间差
     if (eventLoop->maxfd != -1 ||
         ((flags & AE_TIME_EVENTS) && !(flags & AE_DONT_WAIT))) {
         int j;
@@ -442,6 +442,7 @@ int aeProcessEvents(aeEventLoop *eventLoop, int flags)
         // 处理文件事件
         numevents = aeApiPoll(eventLoop, tvp);
         for (j = 0; j < numevents; j++) {
+            // 根据 fired 数组，从 events 数组中取出事件
             aeFileEvent *fe = &eventLoop->events[eventLoop->fired[j].fd];
             int mask = eventLoop->fired[j].mask;
             int fd = eventLoop->fired[j].fd;
@@ -503,8 +504,7 @@ int aeWait(int fd, int mask, long long milliseconds) {
 void aeMain(aeEventLoop *eventLoop) {
     eventLoop->stop = 0;
     while (!eventLoop->stop) {
-        // 如果有需要在处理事件之前执行的函数
-        // 那么运行它
+        // 如果有需要在处理事件之前执行的函数，那么运行它
         if (eventLoop->beforesleep != NULL)
             eventLoop->beforesleep(eventLoop);
         // 开始处理事件

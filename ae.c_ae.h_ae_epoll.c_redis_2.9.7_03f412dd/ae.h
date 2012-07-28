@@ -90,7 +90,7 @@ typedef struct aeTimeEvent {
 } aeTimeEvent;
 
 /* A fired event */
-// 已就绪事件（被触发，等待处理，不阻塞）
+// 已就绪文件事件（被触发，等待处理，不阻塞）
 typedef struct aeFiredEvent {
     // 文件描述符
     int fd;     
@@ -106,9 +106,9 @@ typedef struct aeEventLoop {
     int setsize; /* max number of file descriptors tracked */
     // 时间事件的计数器
     long long timeEventNextId;
-    // 已注册事件
+    // 文件事件
     aeFileEvent *events; /* Registered events */
-    // 已就绪事件
+    // 已就绪文件事件
     aeFiredEvent *fired; /* Fired events */
     // 时间事件（链表）
     aeTimeEvent *timeEventHead;
