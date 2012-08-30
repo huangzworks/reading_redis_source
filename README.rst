@@ -1,15 +1,16 @@
-# Redis 源码阅读
+Redis 源码阅读
+=================
 
-对 Redis 源码的注释工作已经转移到 [redisbook/redis_code_comment](https://github.com/redisbook/redis_code_comment) 项目，欢迎意见、 start 和 fork 。
+对 Redis 源码的注释工作已经转移到 `redisbook/redis_code_comment <https://github.com/redisbook/redis_code_comment>`_ 项目，欢迎意见、 star 和 fork 。
 
-huangz
+| huangz
+| 2012.8.30
 
-2012.8.30
 
+项目说明
+-----------
 
-## 项目说明
-
-学习 redis 的源码，并加上相关的注释。
+学习 Redis 的源码，并加上相关的注释。
 
 因为 Redis 的版本升级比较快，对源码的注释是滚动地在不同的版本上进行的，当然，注释之后会对源码进行测试，确保被注释的代码的正确性。
  
