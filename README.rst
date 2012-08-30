@@ -3,8 +3,9 @@ Redis 源码阅读
 
 对 Redis 源码的注释工作已经转移到 `redisbook/redis_code_comment <https://github.com/redisbook/redis_code_comment>`_ 项目，欢迎意见、 star 和 fork 。
 
-| huangz
-| 2012.8.30
+huangz
+
+2012.8.30
 
 
 项目说明
@@ -22,8 +23,10 @@ dict.c_and_dict.h_redis_2.9.5_79642420
 
 就是说：
 
-| 文件 dict.c 、 dict.h
-| 版本 redis 2.9.5
-| 哈希 79642420
+文件 dict.c 、 dict.h
+
+版本 redis 2.9.5
+
+哈希 79642420
 
 就是这样。
