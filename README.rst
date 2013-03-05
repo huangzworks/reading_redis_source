@@ -1,11 +1,11 @@
 Redis 源码阅读
 =================
 
-对 Redis 源码的注释工作已经转移到 `redisbook/redis_code_comment <https://github.com/redisbook/redis_code_comment>`_ 项目，欢迎意见、 star 和 fork 。
+对 Redis 源码的注释工作已经转移到 `annotated_redis_source <https://github.com/huangz1990/annotated_redis_source>`_ 项目，欢迎意见、 star 和 fork 。
 
 huangz
 
-2012.8.30
+2013.3.5
 
 
 项目说明
